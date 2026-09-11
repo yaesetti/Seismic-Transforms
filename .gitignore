@@ -2,4 +2,4 @@
 .vscode
 
 # Job Output Files
-*/jobs_out
+jobs_out/
