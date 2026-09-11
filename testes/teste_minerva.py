@@ -31,8 +31,6 @@ from minerva.data.datasets.base import SimpleDataset
 # Experiment Settings
 DATASET_ROOT = Path("/petrobr/parceirosbr/spfm/datasets/seismic-datasets/data/tasks/salt_body_segmentation/tgs/processed_data/partition_method_random")
 
-
-
 train_dataset = SimpleDataset(
     readers=[
         NumpyFolderReader(
@@ -41,17 +39,27 @@ train_dataset = SimpleDataset(
         ),
         NumpyFolderReader(
             path=DATASET_ROOT / "train" / "label",
+            allow_pickle=True,
         ),
     ],
-    transforms=[
-        Repeat(axis=0, n_repetitions=3),  # Transforms to first reader (data)
-        None,  # Transforms to second reader (labels)
+)
+
+test_dataset = SimpleDataset(
+    readers=[
+        NumpyFolderReader(
+            path=DATASET_ROOT / "test" / "data",
+            allow_pickle=True,
+        ),
+        NumpyFolderReader(
+            path=DATASET_ROOT / "test" / "label",
+            allow_pickle=True,
+        ),
     ],
 )
 
 data_module = MinervaDataModule(
-    train_dataset=train_data,
-    test_dataset=train_label,
+    train_dataset=train_dataset,
+    test_dataset=test_dataset,
     batch_size=4,
     num_workers=1,
     additional_train_dataloader_kwargs={"drop_last": True},

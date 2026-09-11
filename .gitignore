@@ -1,0 +1,5 @@
+# VSCode Default Directory
+.vscode
+
+# Job Output Files
+*/jobs_out
