@@ -1,0 +1,51 @@
+Allocated nodes: sdumont2nd2045
+Thu Sep 10 14:19:05 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 595.58.03              Driver Version: 595.58.03      CUDA Version: 13.2     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA H100 80GB HBM3          On  |   00000000:1B:00.0 Off |                    0 |
+| N/A   34C    P0             71W /  700W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+==================================================
+                   🆔 TGS Dataset
+==================================================
+└── Predict Split: test
+📂 Datasets:
+   ├── Train Dataset:
+   │      NumpyFolderReader at '/petrobr/parceirosbr/spfm/datasets/seismic-datasets/data/tasks/salt_body_segmentation/tgs/processed_data/partition_method_random/train/data' (3200 files)
+   ├── Val Dataset:
+   │      None
+   └── Test Dataset:
+          NumpyFolderReader at '/petrobr/parceirosbr/spfm/datasets/seismic-datasets/data/tasks/salt_body_segmentation/tgs/processed_data/partition_method_random/train/label' (3200 files)
+
+🛠 **Dataloader Configurations:**
+   ├── Dataloader class: <class 'torch.utils.data.dataloader.DataLoader'>
+   ├── Train Dataloader Kwargs:
+         ├── batch_size: 4
+         ├── num_workers: 1
+         ├── shuffle: true
+         ├── drop_last: true
+   ├── Val Dataloader Kwargs:
+         ├── batch_size: 4
+         ├── num_workers: 1
+         ├── shuffle: false
+         ├── drop_last: false
+   └── Test Dataloader Kwargs:
+         ├── batch_size: 4
+         ├── num_workers: 1
+         ├── shuffle: false
+         ├── drop_last: false
+==================================================
