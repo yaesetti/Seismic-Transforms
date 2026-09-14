@@ -3,3 +3,7 @@
 
 # Job Output Files
 jobs_out/
+
+# Logs and Checkpoints
+logs/
+checkpoints/
