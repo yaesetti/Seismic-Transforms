@@ -1,5 +1,5 @@
 # ------------ Python Base ------------
-import os
+import numpy as np
 from pathlib import Path
 
 # ------------ Pytorch ------------
@@ -23,7 +23,7 @@ from lightning.pytorch.callbacks import ModelCheckpoint
 from minerva.models.nets.image.deeplabv3 import DeepLabV3Backbone, DeepLabV3, DeepLabV3PredictionHead
 from minerva.models.loaders import FromPretrained
 from minerva.pipelines.lightning_pipeline import SimpleLightningPipeline
-from minerva.transforms.transform import TransformPipeline, Transpose, Padding
+from minerva.transforms.transform import TransformPipeline, Transpose, Repeat, CastTo
 from minerva.data.readers.numpy_reader import NumpyFolderReader
 from minerva.data.data_modules.base import MinervaDataModule
 from minerva.data.datasets.base import SimpleDataset
@@ -31,14 +31,23 @@ from minerva.data.datasets.base import SimpleDataset
 # ------------ Custom ------------
 from seismic.linear_head import LinearSegmentationHead
 from seismic.seismic_model import SeismicModel
+from seismic.padding import SafePadding
+from seismic.transformed_reader import TransformedReader
+from seismic.binary_segmentation_loss import BinarySegmentationLoss
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=- Organizing the directories and paths -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 DATASET_ROOT = Path("/petrobr/parceirosbr/spfm/datasets/seismic-datasets/data/tasks/salt_body_segmentation/tgs/processed_data/partition_method_random")
-LOG_DIR = Path("../tgs/logs/tgs_finetuning")
-CKPT_DIR = Path("../tgs/checkpoints/tgs_finetuning")
+
+EXP_NAME = "exp_01_baseline"
+OUT_ROOT = Path(f"/petrobr/parceirosbr/home/victor.setti/workspace/Seismic-Transforms/outputs/tgs/{EXP_NAME}")
+
+LOG_DIR = OUT_ROOT / "logs"
+CKPT_DIR = OUT_ROOT / "checkpoints"
+PLOTS_DIR = OUT_ROOT / "plots"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 CKPT_DIR.mkdir(parents=True, exist_ok=True)
+PLOTS_DIR.mkdir(parents=True, exist_ok=True)
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=- Experiment settings -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -53,62 +62,85 @@ BACKBONE_FREEZE_STRATEGY = 'full_freeze' # 'full_freeze' or 'custom_freeze'
 PRED_HEAD_TYPE = 'deeplabv3'
 
 USE_META_SSL = True
-META_SSL_TYPE = 'dino'
+META_SSL_TYPE = 'swav'
 
 SEED = 7
 seed_everything(SEED)
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=- Datasets -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-# Transforms that will be applied in the dataset 
-transform_pipeline = TransformPipeline([
-    Padding(128, 128),
-    Transpose([2, 0, 1])
+# Transforms that will be applied in the train dataset 
+data_transform_pipeline = TransformPipeline([
+    SafePadding(128, 128),
+    Transpose([2, 0, 1]),
+    Repeat(axis=0, n_repetitions=3)
+])
+
+# Transforms that will be applied in the masks
+label_transform_pipeline = TransformPipeline([
+    SafePadding(128, 128),
+    Transpose([2, 0, 1]),
+    CastTo(np.float32)
 ])
 
 # Train Dataset
 train_dataset = SimpleDataset(
     readers=[
-        NumpyFolderReader(
-            path=DATASET_ROOT / "train" / "data",
-            allow_pickle=True,
+        TransformedReader(
+            reader=NumpyFolderReader(
+                path=DATASET_ROOT / "train" / "data",
+                allow_pickle=True,
+            ),
+            transform=data_transform_pipeline
         ),
-        NumpyFolderReader(
-            path=DATASET_ROOT / "train" / "label",
-            allow_pickle=True,
-        ),
+        TransformedReader(
+            reader=NumpyFolderReader(
+                path=DATASET_ROOT / "train" / "label",
+                allow_pickle=True,
+            ),
+            transform=label_transform_pipeline
+        )
     ],
-    transforms=transform_pipeline,
 )
 
 # Val Dataset
 val_dataset = SimpleDataset(
     readers=[
-        NumpyFolderReader(
-            path=DATASET_ROOT / "val" / "data",
-            allow_pickle=True,
+        TransformedReader(
+            reader=NumpyFolderReader(
+                path=DATASET_ROOT / "val" / "data",
+                allow_pickle=True,
+            ),
+            transform=data_transform_pipeline
         ),
-        NumpyFolderReader(
-            path=DATASET_ROOT / "val" / "label",
-            allow_pickle=True,
-        ),
+        TransformedReader(
+            reader=NumpyFolderReader(
+                path=DATASET_ROOT / "val" / "label",
+                allow_pickle=True,
+            ),
+            transform=label_transform_pipeline
+        )
     ],
-    transforms=transform_pipeline,
 )
 
 # Test Dataset
 test_dataset = SimpleDataset(
     readers=[
-        NumpyFolderReader(
-            path=DATASET_ROOT / "test" / "data",
-            allow_pickle=True,
+        TransformedReader(
+            reader=NumpyFolderReader(
+                path=DATASET_ROOT / "test" / "data",
+                allow_pickle=True,
+            ),
+            transform=data_transform_pipeline
         ),
-        NumpyFolderReader(
-            path=DATASET_ROOT / "test" / "label",
-            allow_pickle=True,
-        ),
+        TransformedReader(
+            reader=NumpyFolderReader(
+                path=DATASET_ROOT / "test" / "label",
+                allow_pickle=True,
+            ),
+            transform=label_transform_pipeline
+        )
     ],
-    transforms=transform_pipeline,
 )
 
 # Data Module
@@ -163,7 +195,7 @@ if USE_META_SSL:
 if PRED_HEAD_TYPE == 'deeplabv3':
     pred_head = DeepLabV3PredictionHead(num_classes=NUM_CLASSES)
 else:
-    pred_head = LinearSegmentationHead(in_channels=2, num_classes=NUM_CLASSES)
+    pred_head = LinearSegmentationHead(in_channels=2048, num_classes=NUM_CLASSES)
 
 val_metrics = {
     "IoU": JaccardIndex(task='binary'),
@@ -178,6 +210,7 @@ training_parameters = {
     'pred_head': pred_head,
     'num_classes': NUM_CLASSES,
     'val_metrics': val_metrics,
+    'loss_fn': BinarySegmentationLoss(),
     'optimizer': torch.optim.AdamW,
     'optimizer_kwargs': {
         'weight_decay': 1e-4,
@@ -208,7 +241,7 @@ else:
 csv_logger = CSVLogger(LOG_DIR, name='', version='')
 
 ckpt_callback = ModelCheckpoint(
-    monitor='val_mIoU',
+    monitor='val_IoU',
     mode='max',
     save_top_k=1,
     save_last=False,
@@ -258,4 +291,4 @@ eval_pipeline = SimpleLightningPipeline(
     classification_metrics=metrics
 )
 
-eval_pipeline.run(data_module, task='evaluate', ckpt_path=CKPT_DIR)
+eval_pipeline.run(data_module, task='evaluate', ckpt_path=CKPT_DIR / 'best.ckpt')

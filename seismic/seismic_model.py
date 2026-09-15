@@ -1,4 +1,4 @@
-from minerva.models.net.image.deeplabv3 import DeepLabV3
+from minerva.models.nets.image.deeplabv3 import DeepLabV3
 import torch
 
 class SeismicModel(DeepLabV3):
