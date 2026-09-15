@@ -5,5 +5,7 @@
 jobs_out/
 
 # Logs and Checkpoints
-logs/
-checkpoints/
+outputs/
+
+# PyCache
+__pycache__/
