@@ -1,17 +1,19 @@
 # ------------ Python Base ------------
 import numpy as np
+import sys
+import argparse
 from pathlib import Path
 
 # ------------ Pytorch ------------
 import torch
 import torch.nn as nn
 from torchmetrics import Accuracy, JaccardIndex, F1Score
+from torch.optim.lr_scheduler import CosineAnnealingLR
 
 # ------------ Timm ------------
 import timm
 import timm.optim
 from timm.loss import BinaryCrossEntropy
-from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 # ------------ Lightning ------------
 from lightning import Trainer
@@ -29,17 +31,24 @@ from minerva.data.data_modules.base import MinervaDataModule
 from minerva.data.datasets.base import SimpleDataset
 
 # ------------ Custom ------------
+sys.path.append('/petrobr/parceirosbr/home/victor.setti/workspace/Seismic-Transforms')
+
 from seismic.linear_head import LinearSegmentationHead
 from seismic.seismic_model import SeismicModel
 from seismic.padding import SafePadding
 from seismic.transformed_reader import TransformedReader
 from seismic.binary_segmentation_loss import BinarySegmentationLoss
+from seismic.tgs_metrics import BinaryTGSMeanIoU
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=- Organizing the directories and paths -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 DATASET_ROOT = Path("/petrobr/parceirosbr/spfm/datasets/seismic-datasets/data/tasks/salt_body_segmentation/tgs/processed_data/partition_method_random")
 
-EXP_NAME = "exp_01_baseline"
+parser = argparse.ArgumentParser(description='Train TGS Model')
+parser.add_argument("--exp-name", type=str, required=True, help="Name of the experiment")
+args = parser.parse_args()
+
+EXP_NAME = args.exp_name
 OUT_ROOT = Path(f"/petrobr/parceirosbr/home/victor.setti/workspace/Seismic-Transforms/outputs/tgs/{EXP_NAME}")
 
 LOG_DIR = OUT_ROOT / "logs"
@@ -53,12 +62,15 @@ PLOTS_DIR.mkdir(parents=True, exist_ok=True)
 
 NUM_CLASSES = 1
 LEARNING_RATE = 1e-3
-NUM_EPOCHS = 20
-BATCH_SIZE = 4
+NUM_EPOCHS = 200
+BATCH_SIZE = 32
+NUM_WORKERS = 8
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=- Experiment flags -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-BACKBONE_FREEZE_STRATEGY = 'full_freeze' # 'full_freeze' or 'custom_freeze'
+# 'full_freeze' or 'custom_freeze' or 'full_finetuning'
+BACKBONE_FREEZE_STRATEGY = 'full_finetuning'
+
 PRED_HEAD_TYPE = 'deeplabv3'
 
 USE_META_SSL = True
@@ -148,8 +160,8 @@ data_module = MinervaDataModule(
     train_dataset=train_dataset,
     val_dataset=val_dataset,
     test_dataset=test_dataset,
-    batch_size=4,
-    num_workers=1,
+    batch_size=BATCH_SIZE,
+    num_workers=NUM_WORKERS,
     additional_train_dataloader_kwargs={"drop_last": True},
     additional_val_dataloader_kwargs={"drop_last": True},
     additional_test_dataloader_kwargs={"drop_last": True},
@@ -198,7 +210,8 @@ else:
     pred_head = LinearSegmentationHead(in_channels=2048, num_classes=NUM_CLASSES)
 
 val_metrics = {
-    "IoU": JaccardIndex(task='binary'),
+    "IoU_Standard": JaccardIndex(task='binary'),
+    "TGS_Benchmark": BinaryTGSMeanIoU(),
     "acc": Accuracy(task='binary'),
     "f1-weighted": F1Score(task='binary', average='weighted')
 }
@@ -216,6 +229,11 @@ training_parameters = {
         'weight_decay': 1e-4,
         'lr': LEARNING_RATE,
     },
+    'lr_scheduler': CosineAnnealingLR,
+    'lr_scheduler_kwargs': {
+        'T_max': NUM_EPOCHS,
+        'eta_min': 1e-6
+    }
 }
 
 if BACKBONE_FREEZE_STRATEGY == 'full_freeze':
@@ -241,7 +259,7 @@ else:
 csv_logger = CSVLogger(LOG_DIR, name='', version='')
 
 ckpt_callback = ModelCheckpoint(
-    monitor='val_IoU',
+    monitor='val_TGS_Benchmark',
     mode='max',
     save_top_k=1,
     save_last=False,
@@ -276,7 +294,8 @@ pipeline.run(data_module, task='fit')
 # -=-=-=-=-=-=-=-=-=-=-=-=-=- Evaluating -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 metrics = {
-    "IoU": JaccardIndex(task='binary'),
+    "IoU_Standard": JaccardIndex(task='binary'),
+    "TGS_Benchmark": BinaryTGSMeanIoU(),
     "acc": Accuracy(task='binary'),
     "f1-weighted": F1Score(task='binary', average='weighted')
 }

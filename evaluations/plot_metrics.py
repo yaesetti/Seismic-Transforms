@@ -52,13 +52,18 @@ def plot_learning_curves(df, plots_dir):
         print("⚠️ Could not find both Train and Val loss columns in the CSV. Skipping loss plot.")
     plt.close()
 
-    # ---------------------------------------------------------
-    # 2. Plot Validation Metrics (IoU, Accuracy, F1)
-    # ---------------------------------------------------------
+    # -------------------------------------------------------------
+    # 2. Plot Validation Metrics (IoU, TGS_Benchmark, Accuracy, F1)
+    # -------------------------------------------------------------
     plt.figure(figsize=(10, 6))
     
     # Define colors for different metrics
-    colors = {'val_IoU': 'tab:green', 'val_acc': 'tab:orange', 'val_f1-weighted': 'tab:purple'}
+    colors = {
+        'val_IoU_Standard': 'tab:green', 
+        'val_TGS_Benchmark': 'tab:blue',
+        'val_acc': 'tab:orange', 
+        'val_f1-weighted': 'tab:purple'
+    }
     metrics_plotted = False
     
     for metric, color in colors.items():
@@ -90,7 +95,7 @@ def main():
     # Resolve paths based on the workspace structure
     # This assumes plot_metrics.py is inside Seismic-Transforms/scripts/
     project_root = Path(__file__).resolve().parent.parent
-    exp_dir = project_root / "outputs" / "tgs_salt" / args.experiment_name
+    exp_dir = project_root / "outputs" / "tgs" / args.experiment_name
     
     logs_dir = exp_dir / "logs"
     plots_dir = exp_dir / "plots"
