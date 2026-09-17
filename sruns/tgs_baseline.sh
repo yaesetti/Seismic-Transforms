@@ -18,7 +18,7 @@ sbatch <<EOT
 #SBATCH --job-name=${EXPERIMENT_NAME}
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=9
+#SBATCH --cpus-per-task=21
 #SBATCH --gpus-per-node=1
 #SBATCH --partition=ict-gh200
 #SBATCH --account=spfm

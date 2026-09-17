@@ -62,9 +62,9 @@ PLOTS_DIR.mkdir(parents=True, exist_ok=True)
 
 NUM_CLASSES = 1
 LEARNING_RATE = 1e-3
-NUM_EPOCHS = 200
+NUM_EPOCHS = 100
 BATCH_SIZE = 32
-NUM_WORKERS = 8
+NUM_WORKERS = 20
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=- Experiment flags -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -76,12 +76,14 @@ PRED_HEAD_TYPE = 'deeplabv3'
 USE_META_SSL = True
 META_SSL_TYPE = 'swav'
 
+# TODO: Change SEED to a parser that follows the exp number
 SEED = 7
 seed_everything(SEED)
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=- Datasets -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-# Transforms that will be applied in the train dataset 
+# Transforms that will be applied in the train dataset
+# TODO: Data Padding -> Reflect
 data_transform_pipeline = TransformPipeline([
     SafePadding(128, 128),
     Transpose([2, 0, 1]),
@@ -89,6 +91,7 @@ data_transform_pipeline = TransformPipeline([
 ])
 
 # Transforms that will be applied in the masks
+# TODO: Label Padding -> Constant = 2
 label_transform_pipeline = TransformPipeline([
     SafePadding(128, 128),
     Transpose([2, 0, 1]),
@@ -174,6 +177,7 @@ print(data_module)
 
 deeplab_backbone = DeepLabV3Backbone(num_classes=NUM_CLASSES)
 
+# TODO: Change weights to ImaginetV2
 if USE_META_SSL:
     print(f"Downloading/Loading Meta's {META_SSL_TYPE.upper()} SSL weights for ResNet50...")
 
@@ -209,6 +213,7 @@ if PRED_HEAD_TYPE == 'deeplabv3':
 else:
     pred_head = LinearSegmentationHead(in_channels=2048, num_classes=NUM_CLASSES)
 
+# TODO: Probably remove IoU_Standard
 val_metrics = {
     "IoU_Standard": JaccardIndex(task='binary'),
     "TGS_Benchmark": BinaryTGSMeanIoU(),
@@ -223,17 +228,12 @@ training_parameters = {
     'pred_head': pred_head,
     'num_classes': NUM_CLASSES,
     'val_metrics': val_metrics,
-    'loss_fn': BinarySegmentationLoss(),
+    'loss_fn': BinarySegmentationLoss(), # TODO: Check this wrapper
     'optimizer': torch.optim.AdamW,
     'optimizer_kwargs': {
-        'weight_decay': 1e-4,
+        'weight_decay': 1e-4, # TODO: Check this weight_decay
         'lr': LEARNING_RATE,
     },
-    'lr_scheduler': CosineAnnealingLR,
-    'lr_scheduler_kwargs': {
-        'T_max': NUM_EPOCHS,
-        'eta_min': 1e-6
-    }
 }
 
 if BACKBONE_FREEZE_STRATEGY == 'full_freeze':
@@ -259,6 +259,7 @@ else:
 csv_logger = CSVLogger(LOG_DIR, name='', version='')
 
 ckpt_callback = ModelCheckpoint(
+    # TODO: Change to val_loss
     monitor='val_TGS_Benchmark',
     mode='max',
     save_top_k=1,
@@ -293,6 +294,7 @@ pipeline.run(data_module, task='fit')
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=- Evaluating -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+# TODO: Probably remove IoU_Standard
 metrics = {
     "IoU_Standard": JaccardIndex(task='binary'),
     "TGS_Benchmark": BinaryTGSMeanIoU(),
