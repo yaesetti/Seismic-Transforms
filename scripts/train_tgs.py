@@ -10,6 +10,9 @@ import torch.nn as nn
 from torchmetrics import Accuracy, JaccardIndex, F1Score
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
+# ------------ Torchvision ------------
+from torchvision.models import resnet50, ResNet50_Weights
+
 # ------------ Timm ------------
 import timm
 import timm.optim
@@ -72,9 +75,6 @@ NUM_WORKERS = 20
 BACKBONE_FREEZE_STRATEGY = 'full_finetuning'
 
 PRED_HEAD_TYPE = 'deeplabv3'
-
-USE_META_SSL = True
-META_SSL_TYPE = 'swav'
 
 # TODO: Change SEED to a parser that follows the exp number
 SEED = 7
@@ -183,34 +183,24 @@ print(data_module)
 
 deeplab_backbone = DeepLabV3Backbone(num_classes=NUM_CLASSES)
 
-# TODO: Change weights to ImaginetV2
-if USE_META_SSL:
-    print(f"Downloading/Loading Meta's {META_SSL_TYPE.upper()} SSL weights for ResNet50...")
+print("Downloading/Loading TorchVision's ImageNet1K_V2 weights for ResNet50...")
 
-    if META_SSL_TYPE == 'dino':
-        # Load Meta's DINO ResNet50
-        meta_resnet = torch.hub.load('facebookresearch/dino:main', 'dino_resnet50')
-    elif META_SSL_TYPE == 'swav':
-        # Load Meta's SwAV ResNet50
-        meta_resnet = torch.hub.load('facebookresearch/swav:main', 'resnet50')
-    else:
-        raise ValueError("Invalid SSL type. Choose 'dino' or 'swav'")
-    
-    # Extract the state dictionary from the downloaded Meta model
-    meta_state_dict = meta_resnet.state_dict()
+# Load standard ResNet50 with the improved V2 training recipe
+tv_resnet = resnet50(weights=ResNet50_Weights.IMAGENET1K_V2)
 
-    # Load the weights into your DeepLabV3 Backbone
-    # strict=False is REQUIRED because DeepLabV3 modifies the standard ResNet50 architecture 
-    # (it changes strides and adds dilations in layer3 and layer4). 
-    # However, the convolution weight matrices are the exact same shape, so they load safely.
-    incompatible_keys = deeplab_backbone.load_state_dict(meta_state_dict, strict=False)
-    
-    print("\n--- Meta SSL Transfer Learning Check ---")
-    print(f"Missing keys (expected for DeepLab/classification heads): {len(incompatible_keys.missing_keys)}")
-    print(f"Unexpected keys: {len(incompatible_keys.unexpected_keys)}")
-    
-    # Optional: Log the exact keys if you need to debug your research
-    # print("Missing:", incompatible_keys.missing_keys)
+# Extract the state dictionary from the downloaded TorchVision model
+tv_state_dict = tv_resnet.state_dict()
+
+# Load the weights into your DeepLabV3 Backbone
+# strict=False is REQUIRED because DeepLabV3 modifies the standard ResNet50 architecture
+incompatible_keys = deeplab_backbone.load_state_dict(tv_state_dict, strict=False)
+
+print("\n--- Imaginet Transfer Learning Check ---")
+print(f"Missing keys (expected for DeepLab/classification heads): {len(incompatible_keys.missing_keys)}")
+print(f"Unexpected keys: {len(incompatible_keys.unexpected_keys)}")
+
+# Optional: Log the exact keys if you need to debug your research
+# print("Missing:", incompatible_keys.missing_keys)
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=- Prediction Head -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -258,7 +248,7 @@ else:
     model = SeismicModel(
         freeze_backbone=False,
         **training_parameters
-        )
+    )
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=- Logging and Checkpoint -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
