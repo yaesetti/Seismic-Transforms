@@ -82,18 +82,24 @@ seed_everything(SEED)
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=- Datasets -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+IGNORE_INDEX = 255
+
 # Transforms that will be applied in the train dataset
-# TODO: Data Padding -> Reflect
 data_transform_pipeline = TransformPipeline([
-    SafePadding(128, 128),
+    SafePadding(128, 128, padding_mode='reflect'),
     Transpose([2, 0, 1]),
     Repeat(axis=0, n_repetitions=3)
 ])
 
 # Transforms that will be applied in the masks
-# TODO: Label Padding -> Constant = 2
 label_transform_pipeline = TransformPipeline([
-    SafePadding(128, 128),
+    SafePadding(
+        128,
+        128,
+        padding_mode='constant',
+        padding_value=IGNORE_INDEX,
+        mask_padding_value=IGNORE_INDEX
+    ),
     Transpose([2, 0, 1]),
     CastTo(np.float32)
 ])
@@ -215,10 +221,10 @@ else:
 
 # TODO: Probably remove IoU_Standard
 val_metrics = {
-    "IoU_Standard": JaccardIndex(task='binary'),
-    "TGS_Benchmark": BinaryTGSMeanIoU(),
-    "acc": Accuracy(task='binary'),
-    "f1-weighted": F1Score(task='binary', average='weighted')
+    "IoU_Standard": JaccardIndex(task='binary', ignore_index=IGNORE_INDEX),
+    "TGS_Benchmark": BinaryTGSMeanIoU(ignore_index=IGNORE_INDEX),
+    "acc": Accuracy(task='binary', ignore_index=IGNORE_INDEX),
+    "f1-weighted": F1Score(task='binary', average='weighted', ignore_index=IGNORE_INDEX)
 }
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=- Model and Parameters -=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -228,7 +234,7 @@ training_parameters = {
     'pred_head': pred_head,
     'num_classes': NUM_CLASSES,
     'val_metrics': val_metrics,
-    'loss_fn': BinarySegmentationLoss(), # TODO: Check this wrapper
+    'loss_fn': BinarySegmentationLoss(ignore_index=IGNORE_INDEX),
     'optimizer': torch.optim.AdamW,
     'optimizer_kwargs': {
         'weight_decay': 1e-4, # TODO: Check this weight_decay
@@ -259,8 +265,7 @@ else:
 csv_logger = CSVLogger(LOG_DIR, name='', version='')
 
 ckpt_callback = ModelCheckpoint(
-    # TODO: Change to val_loss
-    monitor='val_TGS_Benchmark',
+    monitor='val_loss',
     mode='max',
     save_top_k=1,
     save_last=False,
@@ -296,10 +301,10 @@ pipeline.run(data_module, task='fit')
 
 # TODO: Probably remove IoU_Standard
 metrics = {
-    "IoU_Standard": JaccardIndex(task='binary'),
-    "TGS_Benchmark": BinaryTGSMeanIoU(),
-    "acc": Accuracy(task='binary'),
-    "f1-weighted": F1Score(task='binary', average='weighted')
+    "IoU_Standard": JaccardIndex(task='binary', ignore_index=IGNORE_INDEX),
+    "TGS_Benchmark": BinaryTGSMeanIoU(ignore_index=IGNORE_INDEX),
+    "acc": Accuracy(task='binary', ignore_index=IGNORE_INDEX),
+    "f1-weighted": F1Score(task='binary', average='weighted', ignore_index=IGNORE_INDEX)
 }
 
 eval_pipeline = SimpleLightningPipeline(
