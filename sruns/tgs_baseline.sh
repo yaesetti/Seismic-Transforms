@@ -1,19 +1,23 @@
 #!/bin/bash
 
-EXPERIMENT_NAME="exp_00_baseline_lr1e-4_cosine_wd1e-4"
+NUM_EXPERIMENTS=5
+BASE_NAME="baseline_lr1e-4_cosine_wd1e-4"
 
 WORKSPACE="/petrobr/parceirosbr/home/victor.setti/workspace"
 PROJECT_ROOT="$WORKSPACE/Seismic-Transforms"
-
 SCRIPT_PATH="$PROJECT_ROOT/scripts/train_tgs.py"
 export SIF="/petrobr/parceirosbr/spfm/singularity/arm64/deeprock/ngc/MINERVA_v0_3_9-beta-SPINN_v0_0_1.sif"
 
-OUTPUT_DIR="$PROJECT_ROOT/outputs/tgs/$EXPERIMENT_NAME"
-JOBS_OUT_DIR="$OUTPUT_DIR/jobs_out"
+for (( i=0; i<NUM_EXPERIMENTS; i++ )); do
+    EXP_NUM=$(printf "%02d" $i)
+    EXPERIMENT_NAME="exp_${EXP_NUM}_${BASE_NAME}"
 
-mkdir -p "$JOBS_OUT_DIR"
+    OUTPUT_DIR="$PROJECT_ROOT/outputs/tgs/$EXPERIMENT_NAME"
+    JOBS_OUT_DIR="$OUTPUT_DIR/jobs_out"
 
-sbatch <<EOT
+    mkdir -p "$JOBS_OUT_DIR"
+
+    sbatch <<EOT
 #!/bin/bash
 #SBATCH --job-name=${EXPERIMENT_NAME}
 #SBATCH --nodes=1
@@ -22,7 +26,7 @@ sbatch <<EOT
 #SBATCH --gpus-per-node=1
 #SBATCH --partition=ict-gh200
 #SBATCH --account=spfm
-#SBATCH --time=06:00:00
+#SBATCH --time=01:00:00
 #SBATCH --output=${JOBS_OUT_DIR}/%j.out
 #SBATCH --error=${JOBS_OUT_DIR}/%j.err
 
@@ -44,3 +48,6 @@ singularity exec --nv \
     --bind /petrobr/parceirosbr/spfm:/petrobr/parceirosbr/spfm \
     "$SIF" bash -c "python3 $SCRIPT_PATH --exp-name $EXPERIMENT_NAME"
 EOT
+
+    echo "✅ Submetido: $EXPERIMENT_NAME"
+done

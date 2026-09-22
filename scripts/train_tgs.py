@@ -2,6 +2,7 @@
 import numpy as np
 import sys
 import argparse
+import re
 from pathlib import Path
 
 # ------------ Pytorch ------------
@@ -76,8 +77,12 @@ BACKBONE_FREEZE_STRATEGY = 'full_finetuning'
 
 PRED_HEAD_TYPE = 'deeplabv3'
 
-# TODO: Change SEED to a parser that follows the exp number
-SEED = 7
+# -=-=-=-=-=-=-=-=-=-=-=-=-=- Seeding -=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+seed_match = re.search(r'\d+', EXP_NAME)
+SEED = int(seed_match.group()) if seed_match else 7
+
+print(f"Experiment Name: {EXP_NAME} | Automatically setting SEED to: {SEED}")
 seed_everything(SEED)
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=- Datasets -=-=-=-=-=-=-=-=-=-=-=-=-=-
