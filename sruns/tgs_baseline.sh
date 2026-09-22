@@ -1,6 +1,6 @@
 #!/bin/bash
 
-EXPERIMENT_NAME="exp_00_baseline_lr1e-4_no-scheduler_BS256"
+EXPERIMENT_NAME="exp_00_baseline_lr1e-4_cosine_wd1e-4"
 
 WORKSPACE="/petrobr/parceirosbr/home/victor.setti/workspace"
 PROJECT_ROOT="$WORKSPACE/Seismic-Transforms"
