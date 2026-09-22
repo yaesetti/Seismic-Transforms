@@ -64,9 +64,9 @@ PLOTS_DIR.mkdir(parents=True, exist_ok=True)
 # -=-=-=-=-=-=-=-=-=-=-=-=-=- Experiment settings -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 NUM_CLASSES = 1
-LEARNING_RATE = 1e-3
+LEARNING_RATE = 1e-4
 NUM_EPOCHS = 100
-BATCH_SIZE = 32
+BATCH_SIZE = 256
 NUM_WORKERS = 20
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=- Experiment flags -=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -227,9 +227,14 @@ training_parameters = {
     'loss_fn': BinarySegmentationLoss(ignore_index=IGNORE_INDEX),
     'optimizer': torch.optim.AdamW,
     'optimizer_kwargs': {
-        'weight_decay': 1e-4, # TODO: Check this weight_decay
+        'weight_decay': 1e-4,
         'lr': LEARNING_RATE,
     },
+    'lr_scheduler': CosineAnnealingLR,
+    'lr_scheduler_kwargs': {
+        'T_max': NUM_EPOCHS,
+        'eta_min': 1e-6
+    }
 }
 
 if BACKBONE_FREEZE_STRATEGY == 'full_freeze':
@@ -256,7 +261,7 @@ csv_logger = CSVLogger(LOG_DIR, name='', version='')
 
 ckpt_callback = ModelCheckpoint(
     monitor='val_loss',
-    mode='max',
+    mode='min',
     save_top_k=1,
     save_last=False,
     dirpath=CKPT_DIR,

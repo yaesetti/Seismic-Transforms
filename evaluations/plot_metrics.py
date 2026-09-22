@@ -20,7 +20,7 @@ def clean_lightning_csv(csv_path):
     df_clean = df.groupby('epoch').mean().reset_index()
     return df_clean
 
-def plot_learning_curves(df, plots_dir):
+def plot_learning_curves(df, plots_dir, exp_name):
     """
     Generates and saves the loss curve and the validation metrics curves.
     """
@@ -39,7 +39,8 @@ def plot_learning_curves(df, plots_dir):
     if train_loss_col and val_loss_col:
         plt.plot(df['epoch'], df[train_loss_col], label='Train Loss', color='tab:blue', linewidth=2)
         plt.plot(df['epoch'], df[val_loss_col], label='Validation Loss', color='tab:red', linewidth=2)
-        plt.title('Training and Validation Loss', fontsize=16)
+        plt.yscale('log')
+        plt.title(f'Loss Curve ({exp_name})', fontsize=16)
         plt.xlabel('Epoch', fontsize=14)
         plt.ylabel('Loss', fontsize=14)
         plt.legend(fontsize=12)
@@ -73,7 +74,7 @@ def plot_learning_curves(df, plots_dir):
             metrics_plotted = True
 
     if metrics_plotted:
-        plt.title('Validation Metrics', fontsize=16)
+        plt.title(f'Metrics ({exp_name})', fontsize=16)
         plt.xlabel('Epoch', fontsize=14)
         plt.ylabel('Score (%)', fontsize=14)
         plt.legend(fontsize=12)
@@ -115,7 +116,7 @@ def main():
     
     # Process and plot
     df_clean = clean_lightning_csv(csv_path)
-    plot_learning_curves(df_clean, plots_dir)
+    plot_learning_curves(df_clean, plots_dir, args.experiment_name)
 
 if __name__ == "__main__":
     main()
