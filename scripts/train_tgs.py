@@ -50,10 +50,16 @@ DATASET_ROOT = Path("/petrobr/parceirosbr/spfm/datasets/seismic-datasets/data/ta
 
 parser = argparse.ArgumentParser(description='Train TGS Model')
 parser.add_argument("--exp-name", type=str, required=True, help="Name of the experiment")
+parser.add_argument("--group-name", type=str, default=None, help="Name of the parent grouping directory")
+
 args = parser.parse_args()
 
 EXP_NAME = args.exp_name
-OUT_ROOT = Path(f"/petrobr/parceirosbr/home/victor.setti/workspace/Seismic-Transforms/outputs/tgs/{EXP_NAME}")
+
+if args.group_name:
+    OUT_ROOT = Path(f"/petrobr/parceirosbr/home/victor.setti/workspace/Seismic-Transforms/outputs/tgs/{args.group_name}/{EXP_NAME}")
+else:
+    OUT_ROOT = Path(f"/petrobr/parceirosbr/home/victor.setti/workspace/Seismic-Transforms/outputs/tgs/{EXP_NAME}")
 
 LOG_DIR = OUT_ROOT / "logs"
 CKPT_DIR = OUT_ROOT / "checkpoints"
@@ -65,7 +71,7 @@ PLOTS_DIR.mkdir(parents=True, exist_ok=True)
 # -=-=-=-=-=-=-=-=-=-=-=-=-=- Experiment settings -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 NUM_CLASSES = 1
-LEARNING_RATE = 1e-4
+LEARNING_RATE = 1e-3
 NUM_EPOCHS = 100
 BATCH_SIZE = 256
 NUM_WORKERS = 20
@@ -222,6 +228,13 @@ val_metrics = {
     "f1-weighted": F1Score(task='binary', average='weighted', ignore_index=IGNORE_INDEX)
 }
 
+test_metrics = {
+    "IoU_Standard": JaccardIndex(task='binary', ignore_index=IGNORE_INDEX),
+    "TGS_Benchmark": BinaryTGSMeanIoU(ignore_index=IGNORE_INDEX),
+    "acc": Accuracy(task='binary', ignore_index=IGNORE_INDEX),
+    "f1-weighted": F1Score(task='binary', average='weighted', ignore_index=IGNORE_INDEX)
+}
+
 # -=-=-=-=-=-=-=-=-=-=-=-=-=- Model and Parameters -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 training_parameters = {
@@ -229,6 +242,7 @@ training_parameters = {
     'pred_head': pred_head,
     'num_classes': NUM_CLASSES,
     'val_metrics': val_metrics,
+    'test_metrics': test_metrics,
     'loss_fn': BinarySegmentationLoss(ignore_index=IGNORE_INDEX),
     'optimizer': torch.optim.AdamW,
     'optimizer_kwargs': {
@@ -299,14 +313,6 @@ pipeline.run(data_module, task='fit')
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=- Evaluating -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-# TODO: Probably remove IoU_Standard
-metrics = {
-    "IoU_Standard": JaccardIndex(task='binary', ignore_index=IGNORE_INDEX),
-    "TGS_Benchmark": BinaryTGSMeanIoU(ignore_index=IGNORE_INDEX),
-    "acc": Accuracy(task='binary', ignore_index=IGNORE_INDEX),
-    "f1-weighted": F1Score(task='binary', average='weighted', ignore_index=IGNORE_INDEX)
-}
-
 eval_pipeline = SimpleLightningPipeline(
     model=model,
     trainer=trainer,
@@ -314,7 +320,6 @@ eval_pipeline = SimpleLightningPipeline(
     save_run_status=True,
     seed=SEED,
     apply_metrics_per_sample=False,
-    classification_metrics=metrics
 )
 
-eval_pipeline.run(data_module, task='evaluate', ckpt_path=CKPT_DIR / 'best.ckpt')
+eval_pipeline.run(data_module, task='test', ckpt_path=CKPT_DIR / 'best.ckpt')
