@@ -95,7 +95,7 @@ seed_everything(SEED)
 
 IGNORE_INDEX = 255
 
-# Transforms that will be applied in the train dataset
+# Transforms that will be applied in the data
 data_transform_pipeline = TransformPipeline([
     SafePadding(128, 128, padding_mode='reflect'),
     Transpose([2, 0, 1]),
@@ -184,7 +184,7 @@ data_module = MinervaDataModule(
     num_workers=NUM_WORKERS,
     additional_train_dataloader_kwargs={"drop_last": True},
     additional_val_dataloader_kwargs={"drop_last": True},
-    additional_test_dataloader_kwargs={"drop_last": True},
+    additional_test_dataloader_kwargs={"drop_last": False},
     name="TGS Dataset",
 )
 
@@ -210,9 +210,6 @@ print("\n--- Imaginet Transfer Learning Check ---")
 print(f"Missing keys (expected for DeepLab/classification heads): {len(incompatible_keys.missing_keys)}")
 print(f"Unexpected keys: {len(incompatible_keys.unexpected_keys)}")
 
-# Optional: Log the exact keys if you need to debug your research
-# print("Missing:", incompatible_keys.missing_keys)
-
 # -=-=-=-=-=-=-=-=-=-=-=-=-=- Prediction Head -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 if PRED_HEAD_TYPE == 'deeplabv3':
@@ -220,7 +217,9 @@ if PRED_HEAD_TYPE == 'deeplabv3':
 else:
     pred_head = LinearSegmentationHead(in_channels=2048, num_classes=NUM_CLASSES)
 
-# TODO: Probably remove IoU_Standard
+
+# -=-=-=-=-=-=-=-=-=-=-=-=-=- Metrics -=-=-=-=-=-=-=-=-=-=-=-=-=-
+
 val_metrics = {
     "IoU_Standard": JaccardIndex(task='binary', ignore_index=IGNORE_INDEX),
     "TGS_Benchmark": BinaryTGSMeanIoU(ignore_index=IGNORE_INDEX),
