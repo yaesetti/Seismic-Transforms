@@ -115,16 +115,16 @@ def main():
 
     args = parser.parse_args()
 
-    project_root = Path(__file__).resolve().parent.parent
+    OUT_PROJECT_ROOT = Path("/petrobr/parceirosbr/spfm/victor.setti/outputs/tgs/")
+    OUT_PERSONAL_ROOT = Path("/petrobr/parceirosbr/home/victor.setti/workspace/Seismic-Transforms/outputs/tgs/")
 
     if args.group_name:
-        exp_dir = project_root / "outputs" / "tgs" / args.group_name / args.exp_name
+        logs_dir = OUT_PROJECT_ROOT / args.group_name / args.exp_name / "logs"
+        plots_dir = OUT_PERSONAL_ROOT / args.group_name / args.exp_name / "plots"
     else:
-        exp_dir = project_root / "outputs" / "tgs" / args.exp_name
+        logs_dir = OUT_PROJECT_ROOT / args.exp_name / "logs"
+        plots_dir = OUT_PERSONAL_ROOT / args.exp_name / "plots"
 
-    
-    logs_dir = exp_dir / "logs"
-    plots_dir = exp_dir / "plots"
     plots_dir.mkdir(parents=True, exist_ok=True)
     
     csv_files = list(logs_dir.rglob("metrics.csv"))

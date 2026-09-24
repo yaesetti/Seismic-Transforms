@@ -57,13 +57,15 @@ args = parser.parse_args()
 EXP_NAME = args.exp_name
 
 if args.group_name:
-    OUT_ROOT = Path(f"/petrobr/parceirosbr/home/victor.setti/workspace/Seismic-Transforms/outputs/tgs/{args.group_name}/{EXP_NAME}")
+    OUT_PERSONAL_ROOT = Path(f"/petrobr/parceirosbr/home/victor.setti/workspace/Seismic-Transforms/outputs/tgs/{args.group_name}/{EXP_NAME}")
+    OUT_PROJECT_ROOT = Path(f"/petrobr/parceirosbr/spfm/victor.setti/outputs/tgs/{args.group_name}/{EXP_NAME}")
 else:
-    OUT_ROOT = Path(f"/petrobr/parceirosbr/home/victor.setti/workspace/Seismic-Transforms/outputs/tgs/{EXP_NAME}")
+    OUT_PERSONAL_ROOT = Path(f"/petrobr/parceirosbr/home/victor.setti/workspace/Seismic-Transforms/outputs/tgs/{EXP_NAME}")
+    OUT_PROJECT_ROOT = Path(f"/petrobr/parceirosbr/spfm/victor.setti/outputs/tgs/{EXP_NAME}")
 
-LOG_DIR = OUT_ROOT / "logs"
-CKPT_DIR = OUT_ROOT / "checkpoints"
-PLOTS_DIR = OUT_ROOT / "plots"
+LOG_DIR = OUT_PROJECT_ROOT / "logs"
+CKPT_DIR = OUT_PROJECT_ROOT / "checkpoints"
+PLOTS_DIR = OUT_PERSONAL_ROOT / "plots"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 CKPT_DIR.mkdir(parents=True, exist_ok=True)
 PLOTS_DIR.mkdir(parents=True, exist_ok=True)
