@@ -1,6 +1,6 @@
 #!/bin/bash
 
-NUM_EXPERIMENTS=1
+NUM_EXPERIMENTS=10
 BASE_NAME="baseline_lr1e-3_cosine_wd1e-4_fixed"
 
 WORKSPACE="/petrobr/parceirosbr/home/victor.setti/workspace"
