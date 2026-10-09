@@ -9,3 +9,6 @@ outputs/
 
 # PyCache
 __pycache__/
+
+# DeepRock
+seismic-datasets/

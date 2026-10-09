@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # You only need to define the group name now
-GROUP_NAME="baseline_lr1e-3_cosine_wd1e-4_fixed"
+GROUP_NAME="hflip-cosine"
 
 WORKSPACE="/petrobr/parceirosbr/home/victor.setti/workspace"
 PROJECT_ROOT="$WORKSPACE/Seismic-Transforms"

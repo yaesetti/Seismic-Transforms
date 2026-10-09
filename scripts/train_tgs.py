@@ -33,6 +33,7 @@ from minerva.transforms.transform import TransformPipeline, Transpose, Repeat, C
 from minerva.data.readers.numpy_reader import NumpyFolderReader
 from minerva.data.data_modules.base import MinervaDataModule
 from minerva.data.datasets.base import SimpleDataset
+from minerva.transforms.random_transform import RandomFlip
 
 # ------------ Custom ------------
 sys.path.append('/petrobr/parceirosbr/home/victor.setti/workspace/Seismic-Transforms')
@@ -97,11 +98,14 @@ seed_everything(SEED)
 
 IGNORE_INDEX = 255
 
+shared_flip = RandomFlip(num_samples=2, possible_axis=-1, prob=0.5, seed=SEED)
+
 # Transforms that will be applied in the data
 data_transform_pipeline = TransformPipeline([
     SafePadding(128, 128, padding_mode='reflect'),
     Transpose([2, 0, 1]),
-    Repeat(axis=0, n_repetitions=3)
+    Repeat(axis=0, n_repetitions=3),
+    shared_flip
 ])
 
 # Transforms that will be applied in the masks
@@ -114,7 +118,8 @@ label_transform_pipeline = TransformPipeline([
         mask_padding_value=IGNORE_INDEX
     ),
     Transpose([2, 0, 1]),
-    CastTo(np.float32)
+    CastTo(np.float32),
+    shared_flip
 ])
 
 # Train Dataset
