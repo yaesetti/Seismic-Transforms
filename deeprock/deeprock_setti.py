@@ -118,7 +118,9 @@ if __name__ == "__main__":
 
     print(f"The following tasks will be executed (in order): {tasks_to_run}")
     for task in tasks_to_run:
-        img_size = task_images[task]
+        base_task = task.split('+')[0]
+
+        img_size = task_images[base_task]
 
         try:
             print(f"**Running {task} with DeepLabV3 + {args.prediction_head} head \n\tfreeze_backbone: {args.freeze}\n\tseed: {args.seed}\n\trandom: {args.random}\n\tLog dir {logs_dir}")
@@ -137,7 +139,7 @@ if __name__ == "__main__":
                 data_dir="/petrobr/parceirosbr/spfm/datasets/deeprock_datasets/",
                 logs_dir=logs_dir,
                 prediction_head=args.prediction_head.replace("-regression", ""),
-                epochs = 30,
+                epochs = 100,
                 learning_rate = args.lr,
                 optimizer= torch.optim.Adam,
                 model_resolution=16, # is it 8 or 16? VS: Was 8, changed to 16

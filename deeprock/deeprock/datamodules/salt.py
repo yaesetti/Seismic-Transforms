@@ -1,5 +1,6 @@
 import numpy as np
 from minerva.transforms.transform import CastTo, TransformPipeline
+from minerva.transforms.random_transform import RandomFlip
 
 
 from deeprock.datamodules.base import DeepRockDataModule
@@ -12,6 +13,9 @@ def to_binary_mask(mask: np.ndarray) -> np.ndarray:
 
 class SaltDataModule(DeepRockDataModule):
     task = "salt"
+
+    shared_hflip = RandomFlip(num_samples=2, possible_axis=-1, prob=0.5)
+
     AVAILABLE_DATASETS = {
         "tgs": {
             "partition": "partition_method_random",
@@ -31,6 +35,34 @@ class SaltDataModule(DeepRockDataModule):
             },
             "data_transforms": TransformPipeline([CastTo("float32")]),
             "label_transforms": TransformPipeline([to_binary_mask, CastTo("int64")]),
+            "out_channels": 1,
+        },
+
+        "tgs+hflip": {
+            "partition": "partition_method_random",
+            "readers": {
+                "train": (
+                    (NumpyFolderReader, dict(sort_method=["text"])),
+                    (NumpyFolderReader, dict(sort_method=["text"])),
+                ),
+                "test": (
+                    (NumpyFolderReader, dict(sort_method=["text"])),
+                    (NumpyFolderReader, dict(sort_method=["text"])),
+                ),
+                "val": (
+                    (NumpyFolderReader, dict(sort_method=["text"])),
+                    (NumpyFolderReader, dict(sort_method=["text"])),
+                ),
+            },
+            "data_transforms": TransformPipeline([
+                CastTo("float32"),
+                shared_hflip
+                ]),
+            "label_transforms": TransformPipeline([
+                to_binary_mask,
+                CastTo("int64"),
+                shared_hflip
+                ]),
             "out_channels": 1,
         }
     }

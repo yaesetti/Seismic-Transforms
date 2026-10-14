@@ -8,10 +8,10 @@ export SIF="/petrobr/parceirosbr/spfm/singularity/arm64/deeprock/ngc/MINERVA_v0_
 
 NUM_EXPERIMENTS=3
 PREDICTION_HEAD="aspp"
-USE_RANDOM="true"
+USE_RANDOM="false"
 FREEZE="false"
 TASKS="salt:tgs"
-LR="1e-3"
+LR="1e-4"
 STAGES="train+evaluate"
 
 PY_ARGS="--prediction-head $PREDICTION_HEAD --tasks $TASKS --lr $LR --stages $STAGES"
@@ -38,18 +38,19 @@ fi
 
 BASE_NAME="deeplab_${PREDICTION_HEAD}_${RAND_STR}_${FREEZE_STR}${LR_STR}"
 
-for (( i=0; i<NUM_EXPERIMENTS; i++ )); do
-    EXP_NUM=$(printf "%02d" $i)
-    EXPERIMENT_NAME="exp_${EXP_NUM}_${BASE_NAME}"
+SAFE_TASK_NAME="${TASKS//:/\/}"
 
-    OUTPUT_DIR="$PROJECT_ROOT/outputs/tgs/$BASE_NAME/$EXPERIMENT_NAME"
+for (( i=0; i<NUM_EXPERIMENTS; i++ )); do
+    EXPERIMENT_NUMBER="$i"
+
+    OUTPUT_DIR="$PROJECT_ROOT/outputs/$BASE_NAME/$SAFE_TASK_NAME/$EXPERIMENT_NUMBER"
     JOBS_OUT_DIR="$OUTPUT_DIR/jobs_out"
 
     mkdir -p "$JOBS_OUT_DIR"
 
     sbatch <<EOT
 #!/bin/bash
-#SBATCH --job-name=${EXPERIMENT_NAME}
+#SBATCH --job-name=${BASE_NAME}_${EXPERIMENT_NUMBER}
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=21
@@ -62,12 +63,12 @@ for (( i=0; i<NUM_EXPERIMENTS; i++ )); do
 
 cd "\$SLURM_SUBMIT_DIR"
 
-echo "=== Informações do Job ==="
-echo "ID do Job: \$SLURM_JOB_ID"
-echo "Nome do Experimento: $EXPERIMENT_NAME"
-echo "Seed: $i"
-echo "Nós alocados: \$SLURM_JOB_NODELIST"
-echo "Data de início: \$(date)"
+echo "==== Job Informations ===="
+echo "Job ID: \$SLURM_JOB_ID"
+echo "Run Number / Seed: $EXPERIMENT_NUMBER"
+echo "Task: $TASKS"
+echo "Allocated Nodes: \$SLURM_JOB_NODELIST"
+echo "Start Date: \$(date)"
 echo "=========================="
 
 nvidia-smi
@@ -79,5 +80,5 @@ singularity exec --nv \
     "$SIF" bash -c "python3 $SCRIPT_PATH $PY_ARGS --seed $i"
 EOT
 
-    echo "✅ Submitted: $EXPERIMENT_NAME"
+    echo "✅ Submitted: ${SAFE_TASK_NAME}_${EXPERIMENT_NUMBER}"
 done

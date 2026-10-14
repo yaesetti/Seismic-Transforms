@@ -190,7 +190,9 @@ def benchmark(
     data_dir = Path(data_dir)
     logs_dir = Path(logs_dir)
 
-    selected_task = TASKS.get(task)
+    base_task = task.split('+')[0]
+
+    selected_task = TASKS.get(base_task)
     if selected_task is None:
         raise ValueError(
             f"Invalid task: {task}! Task must be one of the following: {', '.join(TASKS)}"
@@ -268,7 +270,7 @@ def benchmark(
     if isinstance(learning_rate, list):
         learning_rate = tuple(learning_rate)  # type: ignore
 
-    model_cls = BSDSInference if task == "faults:thebe" else DeepRockModel
+    model_cls = BSDSInference if base_task == "faults:thebe" else DeepRockModel
     model = model_cls(
         backbone=backbone,
         prediction_head=prediction_head,
