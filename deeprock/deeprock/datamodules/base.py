@@ -3,6 +3,7 @@ from typing import Literal, Optional, Tuple, Any, List
 from collections import defaultdict
 from itertools import cycle
 import torch
+import os
 
 import numpy as np
 import lightning as L
@@ -220,6 +221,8 @@ class DeepRockDataModule(L.LightningDataModule):
     norm_label = False
     task = None
 
+    num_cpus = int(os.environ.get("SLURM_CPUS_PER_TASK", os.cpu_count() or 4))
+
     def __init__(
         self,
         root_dir: Path,
@@ -275,10 +278,11 @@ class DeepRockDataModule(L.LightningDataModule):
         self.test_dataset = self.get_dataset("test")
 
     def train_dataloader(self):
+
         return DataLoader(
             self.train_dataset,
             batch_size=self.batch_size,
-            num_workers=torch.get_num_threads(),
+            num_workers=self.num_cpus,
             collate_fn=collate_fn,
             drop_last=self.drop_last_train,
             shuffle=True,
@@ -288,7 +292,7 @@ class DeepRockDataModule(L.LightningDataModule):
         return DataLoader(
             self.val_dataset,
             batch_size=self.batch_size if self.val_dataset.crop_size is None else 1,
-            num_workers=torch.get_num_threads(),
+            num_workers=self.num_cpus,
             collate_fn=collate_fn,
             drop_last=False,
             shuffle=False,
@@ -298,7 +302,7 @@ class DeepRockDataModule(L.LightningDataModule):
         return DataLoader(
             self.test_dataset,
             batch_size=self.eval_batch_size,
-            num_workers=torch.get_num_threads(),
+            num_workers=self.num_cpus,
             collate_fn=collate_fn,
             drop_last=False,
             shuffle=False,
