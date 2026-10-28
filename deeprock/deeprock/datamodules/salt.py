@@ -1,6 +1,6 @@
 import numpy as np
 from minerva.transforms.transform import CastTo, TransformPipeline
-from minerva.transforms.random_transform import RandomFlip
+from minerva.transforms.random_transform import RandomFlip, RandomCrop
 
 
 from deeprock.datamodules.base import DeepRockDataModule
@@ -15,6 +15,8 @@ class SaltDataModule(DeepRockDataModule):
     task = "salt"
 
     shared_hflip = RandomFlip(num_samples=2, possible_axis=-1, prob=0.5)
+    shared_vflip = RandomFlip(num_samples=2, possible_axis=0, prob=0.5)
+    shared_crop = RandomCrop(crop_size=(112, 112), num_samples=2, pad_mode="reflect")
 
     AVAILABLE_DATASETS = {
         "tgs": {
@@ -62,6 +64,92 @@ class SaltDataModule(DeepRockDataModule):
                 to_binary_mask,
                 CastTo("int64"),
                 shared_hflip
+                ]),
+            "out_channels": 1,
+        },
+
+        "tgs+vflip": {
+            "partition": "partition_method_random",
+            "readers": {
+                "train": (
+                    (NumpyFolderReader, dict(sort_method=["text"])),
+                    (NumpyFolderReader, dict(sort_method=["text"])),
+                ),
+                "test": (
+                    (NumpyFolderReader, dict(sort_method=["text"])),
+                    (NumpyFolderReader, dict(sort_method=["text"])),
+                ),
+                "val": (
+                    (NumpyFolderReader, dict(sort_method=["text"])),
+                    (NumpyFolderReader, dict(sort_method=["text"])),
+                ),
+            },
+            "data_transforms": TransformPipeline([
+                CastTo("float32"),
+                shared_vflip
+                ]),
+            "label_transforms": TransformPipeline([
+                to_binary_mask,
+                CastTo("int64"),
+                shared_vflip
+                ]),
+            "out_channels": 1,
+        },
+
+        "tgs+hflip+vflip": {
+            "partition": "partition_method_random",
+            "readers": {
+                "train": (
+                    (NumpyFolderReader, dict(sort_method=["text"])),
+                    (NumpyFolderReader, dict(sort_method=["text"])),
+                ),
+                "test": (
+                    (NumpyFolderReader, dict(sort_method=["text"])),
+                    (NumpyFolderReader, dict(sort_method=["text"])),
+                ),
+                "val": (
+                    (NumpyFolderReader, dict(sort_method=["text"])),
+                    (NumpyFolderReader, dict(sort_method=["text"])),
+                ),
+            },
+            "data_transforms": TransformPipeline([
+                CastTo("float32"),
+                shared_hflip,
+                shared_vflip
+                ]),
+            "label_transforms": TransformPipeline([
+                to_binary_mask,
+                CastTo("int64"),
+                shared_hflip,
+                shared_vflip
+                ]),
+            "out_channels": 1,
+        },
+
+        "tgs+crop": {
+            "partition": "partition_method_random",
+            "readers": {
+                "train": (
+                    (NumpyFolderReader, dict(sort_method=["text"])),
+                    (NumpyFolderReader, dict(sort_method=["text"])),
+                ),
+                "test": (
+                    (NumpyFolderReader, dict(sort_method=["text"])),
+                    (NumpyFolderReader, dict(sort_method=["text"])),
+                ),
+                "val": (
+                    (NumpyFolderReader, dict(sort_method=["text"])),
+                    (NumpyFolderReader, dict(sort_method=["text"])),
+                ),
+            },
+            "data_transforms": TransformPipeline([
+                CastTo("float32"),
+                shared_crop
+                ]),
+            "label_transforms": TransformPipeline([
+                to_binary_mask,
+                CastTo("int64"),
+                shared_crop
                 ]),
             "out_channels": 1,
         }
