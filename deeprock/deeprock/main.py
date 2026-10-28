@@ -424,8 +424,10 @@ def train(
         **additional_trainer_args,
     )
 
+    _, _, last_ckpt = locate_checkpoints(ckpt_dir)
+
     # Train + Val
-    trainer.fit(model, deeprock_task.datamodule)
+    trainer.fit(model, deeprock_task.datamodule, ckpt_path=last_ckpt)
 
 
 def evaluate(
