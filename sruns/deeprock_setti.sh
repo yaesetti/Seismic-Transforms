@@ -6,11 +6,11 @@ SCRIPT_PATH="$PROJECT_ROOT/deeprock/deeprock_setti.py"
 export SIF="/petrobr/parceirosbr/spfm/singularity/arm64/deeprock/ngc/MINERVA_v0_3_9-beta-SPINN_v0_0_1.sif"
 
 
-NUM_EXPERIMENTS=3
+NUM_EXPERIMENTS=10
 PREDICTION_HEAD="aspp"
 USE_RANDOM="false"
 FREEZE="false"
-TASKS="salt:tgs"
+TASKS="facies:aicrowd_seamai+vflip"
 LR="1e-4"
 STAGES="train+evaluate"
 
@@ -50,14 +50,14 @@ for (( i=0; i<NUM_EXPERIMENTS; i++ )); do
 
     sbatch <<EOT
 #!/bin/bash
-#SBATCH --job-name=${BASE_NAME}_${EXPERIMENT_NUMBER}
+#SBATCH --job-name=${TASKS}_${EXPERIMENT_NUMBER}
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=21
 #SBATCH --gpus-per-node=1
 #SBATCH --partition=ict-gh200
 #SBATCH --account=spfm
-#SBATCH --time=03:00:00
+#SBATCH --time=12:00:00
 #SBATCH --output=${JOBS_OUT_DIR}/%j.out
 #SBATCH --error=${JOBS_OUT_DIR}/%j.err
 
