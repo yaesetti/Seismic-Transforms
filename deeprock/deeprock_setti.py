@@ -10,11 +10,11 @@ from minerva.models.nets.image.deeplabv3 import DeepLabV3Backbone
 from deeprock.main import benchmark
 
 task_images = {
-    # "facies:aicrowd_seamai": (1008, 592),
+    "facies:aicrowd_seamai": (1008, 592),
     # "binary_channel_identification:cigChannel": (256, 256),
     # "channel_identification:cigChannel": (256, 256),
     # "faults:thebe": (96, 96),
-    "salt:tgs": (112, 112),
+    # "salt:tgs": (112, 112),
     # "seismic_attribute_computation:F3:envelope": (256, 704),
     # "seismic_attribute_computation:F3:semblance": (256, 704),
     # "super_resolution:seismic_super_resolution": (128, 128),

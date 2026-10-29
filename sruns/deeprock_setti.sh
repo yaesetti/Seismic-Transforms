@@ -10,7 +10,7 @@ NUM_EXPERIMENTS=10
 PREDICTION_HEAD="aspp"
 USE_RANDOM="false"
 FREEZE="false"
-TASKS="facies:aicrowd_seamai+vflip"
+TASKS="facies:aicrowd_seamai+crop"
 LR="1e-4"
 STAGES="train+evaluate"
 

@@ -9,9 +9,9 @@ export SIF="/petrobr/parceirosbr/spfm/singularity/amd64/deeprock/ngc/MINERVA_v0_
 
 # Create a central folder for the SLURM logs
 BASE_NAME="deeplab_aspp_pretrain_fullft"
-TASKS="binary_channel_identification/cigchannel"
+TASKS="facies/aicrowd_seamai+crop"
 
-METRIC="epoch_test_iou_jaccard"
+METRIC="epoch_test_miou-macro"
 
 STD_DIR="$PROJECT_ROOT/outputs/$BASE_NAME/$TASKS/std_deviation"
 mkdir -p "$STD_DIR"
