@@ -1,3 +1,4 @@
 [submodule "seismic-datasets"]
 	path = seismic-datasets
 	url = git@github.com:discovery-unicamp/seismic-datasets.git
+	branch = main
